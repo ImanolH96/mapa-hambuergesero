@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa Hamburguesero de Uruguay</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #0a0a0a; }
+
+  #map { width: 100%; height: 100vh; }
+
+  .leaflet-popup-content-wrapper {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    color: white;
+    padding: 0;
+  }
+  .leaflet-popup-content {
+    margin: 0;
+    width: 240px !important;
+  }
+  .leaflet-popup-tip {
+    background: #1a1a1a;
+  }
+  .leaflet-popup-close-button {
+    color: #888 !important;
+    font-size: 18px !important;
+    top: 8px !important;
+    right: 10px !important;
+  }
+  .leaflet-popup-close-button:hover {
+    color: white !important;
+  }
+
+  .popup-inner {
+    padding: 16px;
+  }
+  .popup-tag {
+    background: #e8871a;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .popup-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .popup-desc {
+    font-size: 12px;
+    color: #aaa;
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .popup-rec {
+    font-size: 11px;
+    color: #e8871a;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .popup-addr {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .popup-links {
+    display: flex;
+    gap: 8px;
+    border-top: 1px solid #2a2a2a;
+    padding-top: 10px;
+  }
+  .popup-btn {
+    flex: 1;
+    padding: 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+  }
+  .popup-btn-primary {
+    background: #e8871a;
+    color: white;
+  }
+  .popup-btn-secondary {
+    background: #252525;
+    color: #aaa;
+    border: 1px solid #333;
+  }
+
+  .burger-marker {
+    width: 36px;
+    height: 36px;
+    background: #e8871a;
+    border-radius: 50%;
+    border: 3px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .burger-marker:hover { transform: scale(1.15); }
+
+  .leaflet-control-zoom {
+    border: none !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+  }
+  .leaflet-control-zoom a {
+    background: #1a1a1a !important;
+    color: white !important;
+    border: 1px solid #333 !important;
+    font-size: 16px !important;
+  }
+  .leaflet-control-zoom a:hover {
+    background: #252525 !important;
+    color: #e8871a !important;
+  }
+
+  .leaflet-control-attribution {
+    background: rgba(10,10,10,0.8) !important;
+    color: #555 !important;
+    font-size: 10px !important;
+  }
+  .leaflet-control-attribution a { color: #666 !important; }
+
+  .fullscreen-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    transition: background 0.2s;
+  }
+  .fullscreen-btn:hover { background: #252525; }
+  .fullscreen-btn svg { width: 16px; height: 16px; stroke: #aaa; }
+
+  .counter {
+    position: absolute;
+    bottom: 30px;
+    right: 10px;
+    z-index: 1000;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: white;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .counter span { color: #e8871a; font-weight: 700; font-size: 18px; display: block; text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div class="fullscreen-btn" onclick="toggleFullscreen()" title="Pantalla completa">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+  </svg>
+</div>
+
+<div class="counter">
+  <span id="count">8</span>
+  burgas en el mapa
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const lugares = [
+  {
+    nombre: "Brados Burger",
+    desc: "Hamburguesas gourmet de tamaño enorme. Ingredientes de primera calidad.",
+    rec: "Recomendada: La clásica con papas fritas",
+    addr: "26 de Marzo 1303, Pocitos",
+    lat: -34.9089,
+    lng: -56.1526,
+    maps: "https://www.google.com/maps/search/Brados+Burger+Montevideo"
+  },
+  {
+    nombre: "Rudy Burgers",
+    desc: "Las sirven en bandejas de madera, tan bonitas que da pena comerlas. Calidad top.",
+    rec: "Recomendada: Especial de la casa",
+    addr: "26 de Marzo 3471, Pocitos",
+    lat: -34.9102,
+    lng: -56.1612,
+    maps: "https://www.google.com/maps/search/Rudy+Burgers+Montevideo"
+  },
+  {
+    nombre: "Burgers Pocitos",
+    desc: "Todo hecho desde cero con técnicas clásicas. Pura perfección en cada mordida.",
+    rec: "Recomendada: La signature",
+    addr: "26 de Marzo 1161, Pocitos",
+    lat: -34.9085,
+    lng: -56.1518,
+    maps: "https://www.google.com/maps/search/Burgers+Pocitos+Montevideo"
+  },
+  {
+    nombre: "Álvarez Bar",
+    desc: "En plena Ciudad Vieja. Todo casero y la atención es espectacular. Ambiente con madera y plantas.",
+    rec: "Recomendada: Burger con chivito",
+    addr: "Ciudad Vieja, Montevideo",
+    lat: -34.9067,
+    lng: -56.2051,
+    maps: "https://www.google.com/maps/search/Alvarez+Bar+Montevideo"
+  },
+  {
+    nombre: "284 Burger House",
+    desc: "Para los que aman las burgers gigantes con buena birra. Podés elegir pan y uno de 7 aderezos.",
+    rec: "Recomendada: Falafel veggie",
+    addr: "Montevideo",
+    lat: -34.9150,
+    lng: -56.1730,
+    maps: "https://www.google.com/maps/search/284+Burger+House+Montevideo"
+  },
+  {
+    nombre: "Gaucho Burger",
+    desc: "Propuesta con identidad uruguaya. Tienen hasta una burger con provolone fundido.",
+    rec: "Recomendada: La gaucha con provolone",
+    addr: "Montevideo",
+    lat: -34.9020,
+    lng: -56.1680,
+    maps: "https://www.google.com/maps/search/Gaucho+Burger+Montevideo"
+  },
+  {
+    nombre: "Harlem Montevideo",
+    desc: "Propuesta diferente en el mercado. Un mordisco y te enamoras. Estilo urbano y original.",
+    rec: "Recomendada: La estrella de Harlem",
+    addr: "Montevideo",
+    lat: -34.9130,
+    lng: -56.1590,
+    maps: "https://www.google.com/maps/search/Harlem+Montevideo"
+  },
+  {
+    nombre: "Billy Burger",
+    desc: "Burgers sencillas y deliciosas, así lo dicta su slogan. Estilo fast food con 3 burgers muy buenas.",
+    rec: "Recomendada: Smokey 🍔",
+    addr: "Montevideo",
+    lat: -34.9060,
+    lng: -56.1640,
+    maps: "https://www.google.com/maps/search/Billy+Burger+Montevideo"
+  }
+];
+
+const map = L.map('map', {
+  center: [-34.9085, -56.168],
+  zoom: 13,
+  zoomControl: true,
+  attributionControl: true
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+lugares.forEach(lugar => {
+  const icon = L.divIcon({
+    className: '',
+    html: `<div class="burger-marker">🍔</div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+    popupAnchor: [0, -20]
+  });
+
+  const popup = `
+    <div class="popup-inner">
+      <div class="popup-tag">Hamburguesería</div>
+      <div class="popup-name">${lugar.nombre}</div>
+      <div class="popup-desc">${lugar.desc}</div>
+      <div class="popup-rec">${lugar.rec}</div>
+      <div class="popup-addr">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        ${lugar.addr}
+      </div>
+      <div class="popup-links">
+        <a href="${lugar.maps}" target="_blank" class="popup-btn popup-btn-primary">Cómo llegar</a>
+        <a href="#" class="popup-btn popup-btn-secondary">Ver más</a>
+      </div>
+    </div>
+  `;
+
+  L.marker([lugar.lat, lugar.lng], { icon })
+    .addTo(map)
+    .bindPopup(popup, { maxWidth: 260, minWidth: 240 });
+});
+
+document.getElementById('count').textContent = lugares.length;
+
+function toggleFullscreen() {
+  const el = document.documentElement;
+  if (!document.fullscreenElement) {
+    el.requestFullscreen && el.requestFullscreen();
+  } else {
+    document.exitFullscreen && document.exitFullscreen();
+  }
+}
+</script>
+</body>
+</html>
